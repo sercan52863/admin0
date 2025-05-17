@@ -1,12 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getToken, clearToken } from '../utils/auth';
 
 export default function AdminSettings() {
   const [logo, setLogo] = useState(null);
   const [color, setColor] = useState("#ffffff");
   const [font, setFont] = useState("serif");
+  const navigate = useNavigate();
 
   useEffect(() => {
+    if (!getToken()) {
+      navigate('/admin/login');
+      return;
+    }
     fetch('/.netlify/functions/getTheme')
       .then(res => res.json())
       .then(data => {
@@ -16,7 +23,12 @@ export default function AdminSettings() {
           setLogo(data.logoUrl || null);
         }
       });
-  }, []);
+  }, [navigate]);
+
+  const handleLogout = () => {
+    clearToken();
+    navigate('/admin/login');
+  };
 
   const handleSave = () => {
     fetch('/.netlify/functions/saveTheme', {
@@ -37,7 +49,7 @@ export default function AdminSettings() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setLogo(reader.result); // base64
+        setLogo(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -45,21 +57,22 @@ export default function AdminSettings() {
 
   return (
     <div style={{ fontFamily: font, backgroundColor: color, minHeight: "100vh", padding: "2rem" }}>
-      <h1>Velynt Admin Panel - Theme Settings</h1>
+      <h1>Velynt Admin Panel - Tema Ayarları</h1>
+      <button onClick={handleLogout}>Çıkış Yap</button>
 
       <div>
-        <label>Upload Logo: </label>
+        <label>Logo Yükle: </label>
         <input type="file" onChange={handleFileChange} />
-        {logo && <img src={logo} alt="Logo Preview" style={{ height: 60, marginTop: 10 }} />}
+        {logo && <img src={logo} alt="Logo" style={{ height: 60, marginTop: 10 }} />}
       </div>
 
       <div style={{ marginTop: 20 }}>
-        <label>Select Theme Color: </label>
+        <label>Renk: </label>
         <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
       </div>
 
       <div style={{ marginTop: 20 }}>
-        <label>Font: </label>
+        <label>Yazı Tipi: </label>
         <select value={font} onChange={(e) => setFont(e.target.value)}>
           <option value="serif">Serif</option>
           <option value="sans-serif">Sans-serif</option>
